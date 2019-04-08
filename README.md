@@ -2,7 +2,7 @@
 
 ![camelspace](https://user-images.githubusercontent.com/1643758/55430521-f73b0e80-5553-11e9-8aed-3c74e33f5a50.jpg)
 
-Your code is good, but it could be _great_ code, it it was [twelve-factor](https://12factor.net/) code. You're supposed to configure twelve-factor apps with [environment variables](https://12factor.net/config), because they are simple, cross-platform, easy to combine and override, and separate from code. Then again, actually _using_ them is all like:
+Your code is good, but it could be _great_ code, if it was [twelve-factor](https://12factor.net/) code. You're supposed to configure twelve-factor apps with [environment variables](https://12factor.net/config), because they are simple, cross-platform, easy to combine and override, and separate from code. Then again, actually _using_ them is all like:
 
 ```sh
 # It's a flat dictionary with no namespacing or hierarchy.
@@ -22,7 +22,9 @@ MY_APP_TELEMETRY_LOG_ENABLED=1
 MY_APP_TELEMETRY_LOG_LEVEL=debug
 ```
 
-Some operating systems may allow more flexible environment variables, but not all of them, and the point of using them is to be maximally portable. Escaping rules differ; shell syntax differs; some shells aren't case sensitive, and more. [The Open Group](http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap08.html) defines some restrictions here, but the easiest rule to remember is **ONLY_CAPITAL_ASCII_LETTERS_AND_UNDERSCORES_NO_FUNNY_BUSINESS**. :warning: To pursue this ideal, `camelspace` will ignore any environment variables that don't match this format:
+Some operating systems may allow more flexible environment variables, but not all of them, and the point of using them is to be maximally portable. Escaping rules differ; shell syntax differs; some shells aren't case sensitive, and more. [The Open Group](http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap08.html) defines some restrictions here, but the easiest rule to remember is **ONLY_CAPITAL_ASCII_LETTERS_AND_UNDERSCORES_NO_FUNNY_BUSINESS**.
+
+:warning: To pursue this ideal, `camelspace` will ignore any environment variables that don't match this format:
 
 - First character **must** be `[A-Z]`
 - Subsequent characters may be `[A-Z]`, `[0-9]`, or `_`
