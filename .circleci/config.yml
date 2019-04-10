@@ -20,14 +20,13 @@ jobs:
           name: Install packages from lockfile
           command: npm ci
       - run:
-          name: Test suites
-          command: "npm run -s format && mkdir -p test-results && npm run -s tap -- --reporter=xunit --no-coverage > ./test-results/camelspaceTests.xml"
-      - run:
-          name: Code coverage
-          command: npm run -s tap && npx codecov
+          name: Tests and coverage
+          command: "npx mkdirp test-results && npm run -s test -- --coverage-report=lcovonly --reporter=xunit > ./test-results/camelspaceTests.xml"
       - save_cache:
           paths:
             - ~/usr/local/lib/node_modules # location depends on npm version
           key: node-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - store_test_results:
           path: "test-results"
+      - store_artifacts:
+          path: "coverage"

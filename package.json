@@ -7,11 +7,12 @@
     "index.js"
   ],
   "scripts": {
-    "format": "prettier --write \"./*.js\" && eslint --fix ./*.{js,json}",
+    "format": "prettier --loglevel warn --write \"./*.js\" && eslint --quiet --fix ./*.{js,json}",
     "prepublishOnly": "npm run -s test",
-    "tap": "tap --cov *.test.js",
-    "test": "npm run -s format && npm run -s tap",
-    "test:dev": "chokidar --silent --polling --initial \"./*.js\" -c \"npm run -s tap\""
+    "tap": "tap *.test.js",
+    "test": "npm run -s format && npm run -s tap -- --cov",
+    "test:ci": "mkdirp test-results && npm run -s test -- --coverage-report=lcovonly --reporter=xunit > ./test-results/camelspaceTests.xml",
+    "test:dev": "chokidar --silent --polling --initial \"./*.js\" -c \"npm run -s test\""
   },
   "repository": {
     "type": "git",
@@ -34,13 +35,9 @@
     "change-case": "^3.1.0"
   },
   "devDependencies": {
-    "@magento/eslint-config": "^1.4.0",
     "chokidar-cli": "^1.2.2",
     "eslint": "^5.16.0",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-package-json": "^0.1.3",
-    "eslint-plugin-react": "^7.12.4",
-    "lodash": "^4.17.11",
     "prettier": "1.16.4",
     "tap": "^12.6.1"
   }
