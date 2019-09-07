@@ -58,7 +58,7 @@ with...
 
 ```js
 const [indexer, { services, retries }] = camelspace
-  .for('myApp', ['indexer', 'netwo`rk'])
+  .for('myApp', ['indexer', 'network'])
 
 if (indexer.cacheMode === 'redis') {
   connectRedis(services.redisHost, { retries });
