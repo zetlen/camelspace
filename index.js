@@ -32,6 +32,14 @@ function camelspace(baseNs) {
     const child = changeCase.constantCase(scope);
     return camelspace(parent + child);
   }
+  transformer.for = (
+    scope,
+    sections,
+    /* istanbul ignore next: tests argue this */ envObj = process.env
+  ) => {
+    const space = transformer(scope);
+    return sections.map(section => space(section).fromEnv(envObj));
+  };
   transformer.fromEnv = obj => camelSpaceObject(obj, parent);
   transformer.toEnv = obj => snakeSpaceObject(obj, parent);
   return transformer;

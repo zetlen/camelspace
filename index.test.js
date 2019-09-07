@@ -62,6 +62,26 @@ const APP_ENV_NO_TELEMETRY_LOGGING = Object.assign({}, APP_ENV, {
   MY_APP_TELEMETRY_LOG_ENABLED: ""
 });
 
+tap.test("the fluent .for api works", { autoend: true }, t => {
+  t.strictSame(camelspace.for("myApp", ["core"], MOCK_ENV), [
+    {
+      mode: appEnvCamel.coreMode,
+      token: appEnvCamel.coreToken
+    }
+  ]);
+});
+
+tap.test("the fluent .for api works in factories", { autoend: true }, t => {
+  const myAppConfig = camelspace("myApp");
+  t.strictSame(myAppConfig.for("telemetry", ["log", "api"], MOCK_ENV), [
+    {
+      enabled: appEnvCamel.telemetryLogEnabled,
+      level: appEnvCamel.telemetryLogLevel
+    },
+    { endpoint: appEnvCamel.telemetryApiEndpoint }
+  ]);
+});
+
 tap.test(
   "the default export .fromEnv() camelCases everything",
   { autoend: true },

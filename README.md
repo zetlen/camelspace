@@ -1,17 +1,24 @@
+TLDR: `process.env.APP_CONFIG_LONG_VAR_NAME` to `camelspace.for('appConfig', ['longVar'])`.
+
 # camelspace
 
 ![camelspace](https://user-images.githubusercontent.com/1643758/55430521-f73b0e80-5553-11e9-8aed-3c74e33f5a50.jpg)
 
-Your code is good, but it could be _great_ code, if it was [twelve-factor](https://12factor.net/) code. You're supposed to configure twelve-factor apps with [environment variables](https://12factor.net/config), because they are simple, cross-platform, easy to combine and override, and separate from code. Then again, actually _using_ them is all like:
+We're supposed to configure well-designed apps with [environment variables](https://12factor.net/config), because they are simple, cross-platform, easy to combine and override, and separate from code. Then again, actually _using_ them is all like:
 
 ```sh
 # It's a flat dictionary with no namespacing or hierarchy.
 MY_APP_CORE_MODE=test
 MY_APP_CORE_TOKEN=ba6bd9a8e6da
 MY_APP_CI_TOKEN=1730eb9867d
+MY_APP_INDEXER_CACHE_MODE=redis
 THIRD_PARTY_VAR='Who knows!'
 
-# All values are strings, but it's unclear how to escape strings or validate other types.
+# You can do ad-hoc namespacing, but is often ambiguous;
+MY_APP_NETWORK_SERVICES_REDIS_HOST=redis.local
+MY_APP_NETWORK_RETRIES=3
+
+# All values are strings. How do you escape or validate?
 THIRD_PARTY_NULLABLE_BOOLEAN=
 HOST='a.url...maybe?!'
 port=655E9🐘
@@ -37,25 +44,32 @@ So...you _should_ use environment variables for all your configuration, but it's
 Definitely use utilities like [dotenv](https://npmjs.com/package/dotenv) to manage environment variables files and fallbacks, and [envalid](https://npmjs.com/package/envalid) to validate their types, docstrings, and defaults. But wouldn't it be nice if you could replace this:
 
 ```js
-if (process.env.MY_APP_CORE_MODE === 'test') {
-  mockSomething();
+if (process.env.MY_APP_INDEXER_CACHE_MODE === 'redis') {
+  connectRedis(
+    process.env.MY_APP_NETWORK_SERVICES_REDIS_HOST,
+    {
+      retries: process.env.MY_APP_NETWORK_RETRIES
+    }
+  )
 }
 ```
 
 with...
 
 ```js
-const { core } = camelspace('myApp', ['core'])(process.env);
-if (core.mode === 'test') {
-  mockSomething();
+const [indexer, { services, retries }] = camelspace
+  .for('myApp', ['indexer', 'netwo`rk'])
+
+if (indexer.cacheMode === 'redis') {
+  connectRedis(services.redisHost, { retries });
 }
 ```
 
 It would be nice, and it is nice, because with `camelspace` you can.
 
-## Usage
+## Basic Usage
 
-Import or require the `camelspace()` function:
+Import or require `camelspace`:
 
 ```js
 import camelspace from 'camelspace';
@@ -63,12 +77,58 @@ import camelspace from 'camelspace';
 const camelspace = require('camelspace');
 ```
 
+Call `camelspace.for` with a **root namespace**, a list of **configuration
+sections**, and optionally an **environment object**. If you pass no third
+argument, `camelspace` will use `process.env` as the environment object.
+
+### `camelspace.for(<namespace>, <sections>, [env])`
+
+#### Parameters
+
+| Parameter   | Description                                                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `namespace` | The camelcased prefix for all the env vars you want to use. For instance, `myAppCore` would limit to all varnames beginning with `MY_APP_CORE_`.                                                                                                        |
+| `sections`  | An array of strings, with each string representing a camelcased sub-namespace with the `namespace`. For instance, `['network']` would return a length-1 array whose first index was an object of all the env vars starting with `MY_APP_CORE_NETWORK_`. |
+| `env`       | _Optional, defaults to `process.env`_. If passed, camelspace will use this object to lookup env vars, instead of the Node builtin `process.env`. Useful for testing.                                                                                    |
+
+#### Returns
+
+Returns an array of objects, of the same length as the **sections** argument.
+Each section is an object whose keys are camelcased environment variable keys
+with the namespace prefix removed, and whose values are the values of the
+environment variables in the object. No coercion is done; the values are
+exactly what exists in `process.env`, or whatever argument object was sent as
+the third argument.
+
+## Advanced Usage
+
+Instead of the fluent style from the base object, you can use `camelspace()` as
+function to create _factory functions_, which can be reused with different
+`env` objects, or recursively called to create more specific configurators
+within a namespace.
+
+These factory functions can also use the fluent API: they have a `for`
+function. But their scope is constrained to the originally passed namespace,
+so:
+
+```js
+const getAppConf = camelspace('myApp');
+const [{ mode }] = getAppConf.for('indexer', ['cache']);
+// This retrieves process.env.MY_APP_INDEXER_CACHE_MODE in a different style.
+
+if (mode === 'redis') {
+  // etc
+}
+```
+
+This is more verbose than the fluent style, but it can aid in testability.
+
 :information_source: _The following examples all use an environment generated from the example environment variables above._
 
-### Basic
+### Factory Functions
 
 The main export of `camelspace` is a function which creates scoped
-transformers (see below), but `camelspace()` itself is also a transformer for
+transformers (see below), but `camelspace` itself is also a transformer for
 an entire environment object. If you just want to camelcase the whole
 environment, you can use `camelspace.fromEnv(process.env)`.
 
