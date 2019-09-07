@@ -1,4 +1,15 @@
-TLDR: `process.env.APP_CONFIG_LONG_VAR_NAME` to `camelspace.for('appConfig', ['longVar'])`.
+TLDR: from
+
+```js
+let id = process.env.APP_OPT_DEEP_OBJECT_ID
+let name = process.env.APP_OPT_DEEP_OBJECT_NAME
+```
+
+to
+
+```js
+let [{ id, name }] = cs.for('appOpt', ['deepObject'])
+```
 
 # camelspace
 
@@ -15,8 +26,8 @@ MY_APP_INDEXER_CACHE_MODE=redis
 THIRD_PARTY_VAR='Who knows!'
 
 # You can do ad-hoc namespacing, but is often ambiguous;
-MY_APP_NETWORK_SERVICES_REDIS_HOST=redis.local
-MY_APP_NETWORK_RETRIES=3
+MY_APP_NET_SERVICES_REDIS_HOST=redis.local
+MY_APP_NET_RETRIES=3
 
 # All values are strings. How do you escape or validate?
 THIRD_PARTY_NULLABLE_BOOLEAN=
@@ -46,9 +57,9 @@ Definitely use utilities like [dotenv](https://npmjs.com/package/dotenv) to mana
 ```js
 if (process.env.MY_APP_INDEXER_CACHE_MODE === 'redis') {
   connectRedis(
-    process.env.MY_APP_NETWORK_SERVICES_REDIS_HOST,
+    process.env.MY_APP_NET_SERVICES_REDIS_HOST,
     {
-      retries: process.env.MY_APP_NETWORK_RETRIES
+      retries: process.env.MY_APP_NET_RETRIES
     }
   )
 }
@@ -57,8 +68,7 @@ if (process.env.MY_APP_INDEXER_CACHE_MODE === 'redis') {
 with...
 
 ```js
-const [indexer, { services, retries }] = camelspace
-  .for('myApp', ['indexer', 'network'])
+const [indexer, { services, retries }] = cs.for('myApp', ['indexer', 'net'])
 
 if (indexer.cacheMode === 'redis') {
   connectRedis(services.redisHost, { retries });
@@ -72,14 +82,14 @@ It would be nice, and it is nice, because with `camelspace` you can.
 Import or require `camelspace`:
 
 ```js
-import camelspace from 'camelspace';
+import cs from 'camelspace';
 /** OR **/
-const camelspace = require('camelspace');
+const cs = require('camelspace');
 ```
 
-Call `camelspace.for` with a **root namespace**, a list of **configuration
+Call `cs.for` with a **root namespace**, a list of **configuration
 sections**, and optionally an **environment object**. If you pass no third
-argument, `camelspace` will use `process.env` as the environment object.
+argument, `cs.for` will use `process.env` as the environment object.
 
 ### `camelspace.for(<namespace>, <sections>, [env])`
 
@@ -112,7 +122,7 @@ function. But their scope is constrained to the originally passed namespace,
 so:
 
 ```js
-const getAppConf = camelspace('myApp');
+const getAppConf = cs('myApp');
 const [{ mode }] = getAppConf.for('indexer', ['cache']);
 // This retrieves process.env.MY_APP_INDEXER_CACHE_MODE in a different style.
 
@@ -139,7 +149,7 @@ validation or type coercion is done on the values of the object; `camelspace`
 only formats the object keys.)_
 
 ```js
-const env = camelspace.fromEnv(process.env)
+const env = cs.fromEnv(process.env)
 env.myAppCoreMode === 'test';
 env.thirdPartyNullableBoolean === '';
 env.port === undefined
