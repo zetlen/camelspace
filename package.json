@@ -7,7 +7,7 @@
     "index.js"
   ],
   "scripts": {
-    "format": "prettier --loglevel warn --write \"./*.js\" && eslint --quiet --fix ./*.{js,json}",
+    "format": "prettier --loglevel warn --write \"./*.js\"",
     "prepublishOnly": "npm run -s test",
     "tap": "tap *.test.js",
     "test": "npm run -s format && npm run -s tap -- --cov",
@@ -32,13 +32,11 @@
   },
   "homepage": "https://github.com/zetlen/camelspace#readme",
   "dependencies": {
-    "change-case": "^4.1.1"
+    "change-case": "^4.1.2"
   },
   "devDependencies": {
     "chokidar-cli": "^2.1.0",
-    "eslint": "^6.8.0",
-    "eslint-plugin-package-json": "^0.1.4",
-    "prettier": "1.19.1",
-    "tap": "^14.10.7"
+    "prettier": "^2.3.0",
+    "tap": "^15.0.9"
   }
 }
