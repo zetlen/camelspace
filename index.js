@@ -1,7 +1,7 @@
 const changeCase = require("change-case");
 
 const validEnvVarNamePattern = /[A-Z][A-Z0-9_]+/;
-const isValidEnvVarName = s => validEnvVarNamePattern.test(s);
+const isValidEnvVarName = (s) => validEnvVarNamePattern.test(s);
 
 // Gets the entire object if the namespace is the empty string.
 function camelSpaceObject(obj, namespace) {
@@ -38,10 +38,10 @@ function camelspace(baseNs) {
     /* istanbul ignore next: tests argue this */ envObj = process.env
   ) => {
     const space = transformer(scope);
-    return sections.map(section => space(section).fromEnv(envObj));
+    return sections.map((section) => space(section).fromEnv(envObj));
   };
-  transformer.fromEnv = obj => camelSpaceObject(obj, parent);
-  transformer.toEnv = obj => snakeSpaceObject(obj, parent);
+  transformer.fromEnv = (obj) => camelSpaceObject(obj, parent);
+  transformer.toEnv = (obj) => snakeSpaceObject(obj, parent);
   return transformer;
 }
 

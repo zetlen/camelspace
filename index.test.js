@@ -1,10 +1,9 @@
 const tap = require("tap");
 const camelspace = require("./");
-const { omit } = require("lodash");
 
 const APP_CORE_ENV = {
   MY_APP_CORE_MODE: "test",
-  MY_APP_CORE_TOKEN: "ba6bd9a8e6da"
+  MY_APP_CORE_TOKEN: "ba6bd9a8e6da",
 };
 
 const APP_ENV = Object.assign(
@@ -12,7 +11,7 @@ const APP_ENV = Object.assign(
     MY_APP_CI_TOKEN: "1730eb9867d",
     MY_APP_TELEMETRY_API_ENDPOINT: "https://example.com",
     MY_APP_TELEMETRY_LOG_ENABLED: "1",
-    MY_APP_TELEMETRY_LOG_LEVEL: "debug"
+    MY_APP_TELEMETRY_LOG_LEVEL: "debug",
   },
   APP_CORE_ENV
 );
@@ -23,7 +22,7 @@ const MOCK_ENV = Object.assign(
     THIRD_PARTY_VAR: "Who knows!",
     THIRD_PARTY_NULLABLE_BOOLEAN: "",
     HOST: "a.url...maybe?!",
-    port: "655E9🐘"
+    port: "655E9🐘",
   },
   APP_ENV
 );
@@ -41,7 +40,7 @@ const envCamel = {
   host: "a.url...maybe?!",
   myAppTelemetryApiEndpoint: "https://example.com",
   myAppTelemetryLogEnabled: "1",
-  myAppTelemetryLogLevel: "debug"
+  myAppTelemetryLogLevel: "debug",
 };
 
 const appEnvCamel = {
@@ -50,42 +49,42 @@ const appEnvCamel = {
   ciToken: "1730eb9867d",
   telemetryApiEndpoint: "https://example.com",
   telemetryLogEnabled: "1",
-  telemetryLogLevel: "debug"
+  telemetryLogLevel: "debug",
 };
 
 const coreEnvCamel = {
   mode: "test",
-  token: "ba6bd9a8e6da"
+  token: "ba6bd9a8e6da",
 };
 
 const APP_ENV_NO_TELEMETRY_LOGGING = Object.assign({}, APP_ENV, {
-  MY_APP_TELEMETRY_LOG_ENABLED: ""
+  MY_APP_TELEMETRY_LOG_ENABLED: "",
 });
 
-tap.test("the fluent .for api works", { autoend: true }, t => {
+tap.test("the fluent .for api works", { autoend: true }, (t) => {
   t.strictSame(camelspace.for("myApp", ["core"], MOCK_ENV), [
     {
       mode: appEnvCamel.coreMode,
-      token: appEnvCamel.coreToken
-    }
+      token: appEnvCamel.coreToken,
+    },
   ]);
 });
 
-tap.test("the fluent .for api works in factories", { autoend: true }, t => {
+tap.test("the fluent .for api works in factories", { autoend: true }, (t) => {
   const myAppConfig = camelspace("myApp");
   t.strictSame(myAppConfig.for("telemetry", ["log", "api"], MOCK_ENV), [
     {
       enabled: appEnvCamel.telemetryLogEnabled,
-      level: appEnvCamel.telemetryLogLevel
+      level: appEnvCamel.telemetryLogLevel,
     },
-    { endpoint: appEnvCamel.telemetryApiEndpoint }
+    { endpoint: appEnvCamel.telemetryApiEndpoint },
   ]);
 });
 
 tap.test(
   "the default export .fromEnv() camelCases everything",
   { autoend: true },
-  t => {
+  (t) => {
     t.strictSame(camelspace.fromEnv(MOCK_ENV), envCamel);
   }
 );
@@ -93,7 +92,7 @@ tap.test(
 tap.test(
   "the default export .toEnv() SNAKE_CASES everything it parsed",
   { autoend: true },
-  t => {
+  (t) => {
     const env = camelspace.fromEnv(MOCK_ENV);
     const RETURNED_ENV = camelspace.toEnv(env);
     t.strictSame(RETURNED_ENV, SANITIZED_MOCK_ENV);
@@ -104,9 +103,9 @@ tap.test(
 tap.test(
   "the default export with no arguments returns itself",
   { autoend: true },
-  t => {
+  (t) => {
     const identity = camelspace();
-    t.is(identity, camelspace);
+    t.equal(identity, camelspace);
     t.strictSame(identity.fromEnv(MOCK_ENV), envCamel);
   }
 );
@@ -114,7 +113,7 @@ tap.test(
 tap.test(
   "calling a transformer as a function returns a scoped transformer",
   { autoend: true },
-  t => {
+  (t) => {
     const myAppConfig = camelspace("myApp");
     const appEnv = myAppConfig.fromEnv(MOCK_ENV);
     t.strictSame(appEnv, appEnvCamel);
@@ -129,7 +128,7 @@ tap.test(
 tap.test(
   "calling a scoped transformer as a function returns a deeper scoped one",
   { autoend: true },
-  t => {
+  (t) => {
     const myAppConfig = camelspace("myApp");
     const myCoreConfig = myAppConfig("core");
     const coreEnv = myCoreConfig.fromEnv(MOCK_ENV);
@@ -138,3 +137,11 @@ tap.test(
     t.strictSame(CORE_ENV, APP_CORE_ENV);
   }
 );
+
+// lodash.omit but only for json, not complex objects
+// Immutable -- creates a clone of `obj` missing prop `prop`
+function omit(obj, prop) {
+  const copy = JSON.parse(JSON.stringify(obj));
+  delete copy[prop];
+  return copy;
+}
