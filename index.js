@@ -46,3 +46,15 @@ function camelspace(baseNs) {
 }
 
 module.exports = camelspace("");
+
+module.exports.of = (
+  namespaces,
+  /* istanbul ignore next: tests argue this */ envObj = process.env
+) =>
+  namespaces.reduce(
+    (outEnv, namespace) => ({
+      ...outEnv,
+      [namespace]: camelspace(namespace).fromEnv(envObj),
+    }),
+    {}
+  );

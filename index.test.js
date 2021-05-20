@@ -61,6 +61,31 @@ const APP_ENV_NO_TELEMETRY_LOGGING = Object.assign({}, APP_ENV, {
   MY_APP_TELEMETRY_LOG_ENABLED: "",
 });
 
+tap.test(
+  "the simple .of api builds a simple object",
+  { autoend: true },
+  (t) => {
+    t.strictSame(
+      camelspace.of(["myAppCore", "myAppTelemetry", "third"], MOCK_ENV),
+      {
+        myAppCore: {
+          mode: appEnvCamel.coreMode,
+          token: appEnvCamel.coreToken,
+        },
+        myAppTelemetry: {
+          apiEndpoint: appEnvCamel.telemetryApiEndpoint,
+          logEnabled: appEnvCamel.telemetryLogEnabled,
+          logLevel: appEnvCamel.telemetryLogLevel,
+        },
+        third: {
+          partyVar: envCamel.thirdPartyVar,
+          partyNullableBoolean: envCamel.thirdPartyNullableBoolean,
+        },
+      }
+    );
+  }
+);
+
 tap.test("the fluent .for api works", { autoend: true }, (t) => {
   t.strictSame(camelspace.for("myApp", ["core"], MOCK_ENV), [
     {
