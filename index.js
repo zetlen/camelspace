@@ -45,16 +45,18 @@ function camelspace(baseNs) {
   return transformer;
 }
 
-module.exports = camelspace("");
+const root = camelspace("");
 
-module.exports.of = (
+root.of = (
   namespaces,
   /* istanbul ignore next: tests argue this */ envObj = process.env
 ) =>
-  namespaces.reduce(
-    (outEnv, namespace) => ({
+  root.for("", namespaces, envObj).reduce(
+    (outEnv, namespace, index) => ({
       ...outEnv,
-      [namespace]: camelspace(namespace).fromEnv(envObj),
+      [namespaces[index]]: namespace,
     }),
     {}
   );
+
+module.exports = root;

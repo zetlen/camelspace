@@ -1,4 +1,10 @@
-TLDR: get neat groups of camelCased environment variables from a large, flat, SCREAMING_SNAKE_CASED env object.
+Helper library for using environment variables fluently and readably, so you can
+use them for your app settings instead of nonstandardized config files.
+
+Get neat groups of camelCased environment variables from a large, flat,
+SCREAMING_SNAKE_CASED NodeJS `process.env` object.
+
+![camelspace](https://user-images.githubusercontent.com/1643758/55430521-f73b0e80-5553-11e9-8aed-3c74e33f5a50.jpg)
 
 If: 
 ```sh
@@ -30,36 +36,48 @@ redClient({
 you can do
 
 ```js
-const env = camelspace.of('blue', 'red');
+const env = camelspace.of(['blue', 'red'], process.env);
 blueClient(env.blue);
 redClient(env.red);
 ```
 
 And it handles arbitrary levels of nesting and what have you. OK, here's the long version.
 
-# camelspace
+# Contents
 
-![camelspace](https://user-images.githubusercontent.com/1643758/55430521-f73b0e80-5553-11e9-8aed-3c74e33f5a50.jpg)
+1. [Usage](#usage)
+   1. [Managing Groups of App Settings with `camelspace.of()`](#managing-groups-of-app-settings-with-camelspaceof)
+1. [Advanced Usage](#advanced-usage)
+   1. [Scoped environment objects](#scoped-environment-objects)
+   1. [Reversing the transform](#reversing-the-transform)
+   1. [Unscoped transforming](#unscoped-transforming)
+1. [API Reference](#api-reference)
+   1. [`camelspace.of()`](#camelspaceof)
+   1. [`camelspace(namespace)`](#camelspacenamespace)
+      1. [`configFactory.fromEnv(env)`](#configfactoryfromenvenv)
+      1. [`configFactory.toEnv(configObj)`](#configfactorytoenvconfigobj)
+      1. [`configFactory.for(<section>, <subsections>, [env])`](#configfactoryforsection-subsections-env)
+   1. [FAQ](#faq)
+      1. [Why not just a JSON configuration file?](#why-not-just-a-json-configuration-file)
+      1. [What are valid environment variable names?](#what-are-valid-environment-variable-names)
+      1. [How does Camelspace validate?](#how-does-camelspace-validate)
 
-## Usage
+# Usage
 
 ```sh
 npm install camelspace
 ```
 
 ```js
-import cs from 'camelspace';
-/** OR **/
-const cs = require('camelspace');
+import camelspace from 'camelspace';
 ```
 
 Call `camelspace` with some strings to show it how your app settings are stored.
 It will return a sanitized, readable, camel-cased object that helps you keep
 your environment variables organized. There are three modes of usage:
 
-- `camelspace.of(...namespaces)` for splitting your enviroment into simple, named groups
-- `camelspace.for(root, sections)` for nested configurations based on a single root namespace
-- `camelspace(prefix)` for "live" configuration parsing in advanced use cases
+- [`camelspace.of(namespaces)`](#camelspaceof) for splitting your enviroment into simple, named groups
+- [`camelspace(namespace)`](#camelspace) for nested configurations based on a single root namespace
 
 ## Managing Groups of App Settings with `camelspace.of()`
 
@@ -115,7 +133,9 @@ const slackApp = new App({
 });
 ```
 
-But this is of course wordy and yucky. Camelspace takes advantage of the capitalization patterns of JavaScript variables and environment variables, and automates some of this for you.
+This is verbose and error-prone.
+Camelspace takes advantage of the capitalization patterns of JavaScript
+variables and environment variables, and automates some of this for you.
 
 ```js
 // Get a camelcased object of all env vars beginning with `TWITTER_`.
@@ -149,49 +169,28 @@ const twitterClient = new TwitterClient(config.twitter);
 const slackApp = new App(config.slack);
 ```
 
+:warning: Note that **camelspace does no type coercion or validation**; that's
+for other libraries to do. In particular, **camelsace does not validate
+environment variables against your app's own configuration schema.** Definitely
+use utilities like [envalid](https://npmjs.com/package/envalid) to validate
+their types, docstrings, and defaults.
+
 If you have more complex needs, such as nested configuration or multiple versions of the same app, then read on...
-  
-## Managing Complex, Nested App Settings with `camelspace.for()`
 
+# Advanced Usage
 
-If your app is running on a server or container with lots of environment variables, you might run into conflicts on common var names like `PORT` or `LOCALE`. 
+The `camelspace()` function creates _config factory objects_, which can be
+reused with different `env` objects, or recursively called to create more
+specific configurators within a namespace.
 
-Call `cs.for` with a **root namespace**, a list of **configuration
+A config factory object has methods: `.fromEnv()`, `.toEnv()` and `.for()`.
+
+Call `configFactory.for` with a **root namespace**, a list of **configuration
 sections**, and optionally an **environment object**. If you pass no third
-argument, `cs.for` will use `process.env` as the environment object.
-
-### `camelspace.for(<namespace>, <sections>, [env])`
-
-##### Parameters
-
-| Parameter   | Description                                                                                                                                                                                                                                             |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `namespace` | The camelcased prefix for all the env vars you want to use. For instance, `myAppCore` would limit to all varnames beginning with `MY_APP_CORE_`.                                                                                                        |
-| `sections`  | An array of strings, with each string representing a camelcased sub-namespace with the `namespace`. For instance, `['network']` would return a length-1 array whose first index was an object of all the env vars starting with `MY_APP_CORE_NETWORK_`. |
-| `env`       | _Optional, defaults to `process.env`_. If passed, camelspace will use this object to lookup env vars, instead of the Node builtin `process.env`. Useful for testing.                                                                                    |
-
-#### Returns
-
-Returns an array of objects, of the same length as the **sections** argument.
-Each section is an object whose keys are camelcased environment variable keys
-with the namespace prefix removed, and whose values are the values of the
-environment variables in the object. No coercion is done; the values are
-exactly what exists in `process.env`, or whatever argument object was sent as
-the third argument.
-
-## Advanced Usage
-
-Instead of the fluent style from the base object, you can use `camelspace()` as
-function to create _factory functions_, which can be reused with different
-`env` objects, or recursively called to create more specific configurators
-within a namespace.
-
-These factory functions can also use the fluent API: they have a `for`
-function. But their scope is constrained to the originally passed namespace,
-so:
+argument, `configFactory.for` will use `process.env` as the environment object.
 
 ```js
-const getAppConf = cs('myApp');
+const getAppConf = camelspace('myApp');
 const [{ mode }] = getAppConf.for('indexer', ['cache']);
 // This retrieves process.env.MY_APP_INDEXER_CACHE_MODE in a different style.
 
@@ -202,51 +201,12 @@ if (mode === 'redis') {
 
 This is more verbose than the fluent style, but it can aid in testability.
 
-:information_source: _The following examples all use an environment generated from the example environment variables above._
+:information_source: _The following examples all use an environment generated from the [example environment variables from the FAQ](#what-are-valid-environment-variable-names)._
 
-### Factory Functions
+## Scoped environment objects
 
-The main export of `camelspace` is a function which creates scoped
-transformers (see below), but `camelspace` itself is also a transformer for
-an entire environment object. If you just want to camelcase the whole
-environment, you can use `camelspace.fromEnv(process.env)`.
-
-Call `camelspace.fromEnv()` with a `process.env` object (or any object with
-`SCREAMING_SNAKE_CASE` properties). This returns an object representing the
-whole environment, with all properties changes to `camelCase`. _(No
-validation or type coercion is done on the values of the object; `camelspace`
-only formats the object keys.)_
-
-```js
-const env = cs.fromEnv(process.env)
-env.myAppCoreMode === 'test';
-env.thirdPartyNullableBoolean === '';
-env.port === undefined
-```
-
-Note that **camelspace does no type coercion or validation**; that's for other
-libraries to do. Also, note that the `port` from the sample env above did not
-make it into the formatted object, because its lower case meant it did not fit
-the pattern for safe environment variables.
-
-#### Basic reversal
-
-Turn a camelCased object back into an object of SCREAMING_SNAKE_CASE environment
-variables by using `camelspace.toEnv(obj)`. You might need this to pass
-environment variables to a child process, for example.
-
-### Scoped
-
-Call the `camelspace()` function with a **scope prefix** to return an
-object with `.fromEnv()` and `.toEnv()` methods which return scoped objects
-based on prefixes. Use these transformers to extract the environment variables
-relevant to your app and structure them as necessary.
-
-#### Scope prefixes
-
-A scope prefix can be either `camelCase` or `SNAKE_CASE`. It represents a prefix
-for the subset of environment variables to select. To build complex objects,
-simply compose transformer functions by calling them with further scope strings.
+The `.fromEnv()` and `.toEnv()` methods return scoped objects
+constrained to the root namespace of the factory.
 
 ```js
 const appConfig = camelspace('myApp'); // could be "MY_APP";
@@ -278,7 +238,11 @@ telemetryLogEnv.enabled === '1'; // Note that camelspace does no type coercion.
 telemetryLogEnv.level === 'debug';
 ```
 
-#### Scoped reversal
+## Reversing the transform
+
+Turn a camelCased object back into an object of SCREAMING_SNAKE_CASE environment
+variables by using `configFactory.toEnv(obj)`. You might need this to pass
+environment variables to a child process, for example.
 
 A transform function has a method `.toEnv(camelSpacedObject)`, which does the
 reverse operation `transformer.toEnv(object)` transforms any object returned
@@ -313,7 +277,124 @@ const originalEnv = appConfig.toEnv(appEnv);
  */
 ```
 
-:information_source: _(The `camelspace` default export is just a transformer whose namespace is the empty string `''`. If you call it with the empty string, it just returns itself. Zowie!)_
+## Unscoped transforming
+
+The `camelspace` default export is just a config factory whose namespace is the empty string `''`.
+
+Call `camelspace.fromEnv()` with a `process.env` object (or any object with
+`SCREAMING_SNAKE_CASE` properties). This returns an object representing the
+whole environment, with all properties changes to `camelCase`. _(No
+validation or type coercion is done on the values of the object; `camelspace`
+only formats the object keys.)_
+
+```js
+const env = configFactory.fromEnv(process.env)
+env.myAppCoreMode === 'test';
+env.thirdPartyNullableBoolean === '';
+env.port === undefined
+```
+
+The corresponding `camelspace.toEnv(env)` will turn a config object back into
+environment variables, not limited by a scope prefix.
+
+# API Reference
+
+## `camelspace.of()`
+
+| Parameter | Description |
+| --------- | ----------- |
+| `namespaces` | Array of camelCased prefixes for each section of env vars to collect. For instance, `['twitter', 'googleAnalytics']` would get all env vars starting with `TWITTER_`, and all env vars starting with `GOOGLE_ANALYTICS`. |
+| `env` | _Optional, defaults to `process.env`_. If passed, camelcase will use this argument as the object of env vars to process, instead of `process.env`. |
+
+Returns an object with keys matching the list of `namespaces`, and values matching camel cased versions of the env vars under each namespace.
+
+**Example:**
+```js
+console.log(
+  camelspace.of(
+    ['twitter', 'googleAnalytics'],
+    {
+      GOOGLE_ANALYTICS_ACCOUNT_ID: 123456,
+      TWITTER_USER: '@dril',
+      TWITTER_API_KEY: 'abcdef',
+      UNRELATED: 'foo'
+    }
+  )
+);
+```
+```
+{
+  twitter: {
+    user: '@dril',
+    apiKey: 'abcdef'
+  },
+  googleAnalytics: {
+    accountId: 123456
+  }
+}
+```
+
+Considering the underscores in env var names to be "levels", you can split out
+your vars however you wish. For instance, camelspace will turn the same
+environment into a different object if `google` is used instead:
+
+```
+{
+  twitter: {
+    user: '@dril',
+    apiKey: 'abcdef'
+  },
+  google: {
+    analyticsAccountId: 123456
+  }
+}
+```
+
+For more complex objects with deeper nesting, use the `camelspace()` factory.
+
+## `camelspace(namespace)`
+
+| Parameter   | Description                                                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `namespace` | The camelcased prefix for all the env vars you want to use. For instance, `myAppCore` would limit to all varnames beginning with `MY_APP_CORE_`.  |
+
+Returns a **config factory object** with `fromEnv`, `toEnv`, and `for` methods. The object is also
+a callable function that can return another config factory, with a deeper scope.
+
+### `configFactory.fromEnv(env)`
+
+| Parameter | Description |
+| --------- | ----------- |
+| `envObj` | Object with SCREAMING_SNAKE_CASE keys, to use as the source of environment variables.
+
+Returns an object of the variables whose names begin with the config factory's
+namespace, and the values camelCased.
+
+
+### `configFactory.toEnv(configObj)`
+
+| Parameter | Description |
+| --------- | ----------- |
+| `configObj` | Object with camelCased keys, to use as the source of environment variables.
+
+Returns an object with SCREAMING_SNAKE_CASE keys, whose properties all begin with the SCREAMING_SNAKE_CASE transofmration of the config factory's namespace.
+
+
+
+### `configFactory.for(<section>, <subsections>, [env])`
+
+| Parameter   | Description                                                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `namespace` | The camelcased prefix for all the env vars you want to use. For instance, `myAppCore` would limit to all varnames beginning with `MY_APP_CORE_`.                                                                                                        |
+| `sections`  | An array of strings, with each string representing a camelcased sub-namespace with the `namespace`. For instance, `['network']` would return a length-1 array whose first index was an object of all the env vars starting with `MY_APP_CORE_NETWORK_`. |
+| `env`       | _Optional, defaults to `process.env`_. If passed, camelspace will use this object to lookup env vars, instead of the Node builtin `process.env`.
+
+Returns an array of objects, of the same length as the **sections** argument.
+Each section is an object whose keys are camelcased environment variable keys
+with the namespace prefix removed, and whose values are the values of the
+environment variables in the object. No coercion is done; the values are
+exactly what exists in `process.env`, or whatever argument object was sent as
+the third argument.
 
 ## FAQ
 
@@ -361,7 +442,3 @@ Some operating systems may allow more flexible environment variables, but not al
 - Subsequent characters may be `[A-Z]`, `[0-9]`, or `_`
 
 At the very least, to ensure cross-platform consistency, the incoming environment variables need to be formatted in this manner.
-
-And furthermore, as the Open Group notes in the above link, environment variables all exist in one global namespace, so in order not to step on other variables, you usually want to add prefixes to the ones for your app, making them long.
-
-:warning: **Camelspace does not validate environment variables against your app's own configuration schema.** Definitely use utilities like [envalid](https://npmjs.com/package/envalid) to validate their types, docstrings, and defaults.
